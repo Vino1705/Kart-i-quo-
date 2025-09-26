@@ -70,8 +70,8 @@ export default function SignupPage() {
               </div>
             </RadioGroup>
           </div>
-          <Button type="submit" className="w-full">
-            Create an account
+          <Button type="submit" className="w-full" asChild>
+            <Link href="/onboarding">Create an account</Link>
           </Button>
           <Button variant="outline" className="w-full">
             <svg className="mr-2 h-4 w-4" viewBox="0 0 48 48">

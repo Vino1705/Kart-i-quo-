@@ -7,7 +7,6 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-  CardFooter
 } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -27,26 +26,6 @@ import {
   SafetyNetRecommendationsOutput,
 } from '@/ai/flows/safety-net-recommendations';
 import { Loader2 } from 'lucide-react';
-
-const mockPastExpenses = JSON.stringify(
-  [
-    { date: '2024-06-01', amount: 1200, category: 'Rent' },
-    { date: '2024-06-05', amount: 150, category: 'Groceries' },
-    { date: '2024-06-15', amount: 200, category: 'Utilities' },
-    { date: '2024-06-20', amount: 80, category: 'Entertainment' },
-  ],
-  null,
-  2
-);
-
-const mockSeasonalTrends = JSON.stringify(
-  {
-    'December': 'Higher spending on gifts and travel.',
-    'July': 'Higher spending on vacations.'
-  },
-  null,
-  2
-);
 
 export function AiFeatures() {
   const [activeTab, setActiveTab] = useState('forecast');
@@ -87,18 +66,23 @@ export function AiFeatures() {
     setScenarioLoading(false);
   }
   
-  async function handleSafetyNet() {
+  async function handleSafetyNet(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
     setSafetyNetLoading(true);
     setSafetyNetResult(null);
+    const formData = new FormData(event.currentTarget);
+    const income = Number(formData.get('income'));
+    const expensesRaw = formData.get('expenses') as string;
+    const essentialCategoriesRaw = formData.get('essentialCategories') as string;
+
+    const expenses = JSON.parse(expensesRaw);
+    const essentialCategories = essentialCategoriesRaw.split(',').map(c => c.trim());
+
+
     const result = await getSafetyNetRecommendations({
-      income: 3000,
-      expenses: [
-        { category: 'Rent', amount: 1200 },
-        { category: 'Groceries', amount: 400 },
-        { category: 'Subscriptions', amount: 50 },
-        { category: 'Dining Out', amount: 200 },
-      ],
-      essentialCategories: ['Rent', 'Groceries'],
+      income,
+      expenses,
+      essentialCategories,
     });
     setSafetyNetResult(result);
     setSafetyNetLoading(false);
@@ -121,14 +105,14 @@ export function AiFeatures() {
           </TabsList>
           <TabsContent value="forecast">
             <form onSubmit={handleForecast} className="space-y-4 mt-4">
-              <p className="text-sm text-muted-foreground">Analyze past expenses to forecast future spending.</p>
+              <p className="text-sm text-muted-foreground">Analyze past expenses to forecast future spending. Provide data as JSON.</p>
               <div className="space-y-2">
                 <Label htmlFor="past-expenses">Past Expenses (JSON)</Label>
-                <Textarea id="past-expenses" name="pastExpenses" defaultValue={mockPastExpenses} className="h-32 font-code text-xs"/>
+                <Textarea id="past-expenses" name="pastExpenses" placeholder='[{"date": "2024-07-01", "amount": 50000, "category": "Salary"}]' className="h-32 font-code text-xs"/>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="seasonal-trends">Seasonal Trends (JSON)</Label>
-                <Textarea id="seasonal-trends" name="seasonalTrends" defaultValue={mockSeasonalTrends} className="h-24 font-code text-xs"/>
+                <Textarea id="seasonal-trends" name="seasonalTrends" placeholder='{"December": "Higher spending on gifts."}' className="h-24 font-code text-xs"/>
               </div>
               <Button type="submit" disabled={forecastLoading}>
                 {forecastLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -151,21 +135,21 @@ export function AiFeatures() {
                 <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                         <Label htmlFor="currentIncome">Current Income</Label>
-                        <Input id="currentIncome" name="currentIncome" type="number" defaultValue="5000" />
+                        <Input id="currentIncome" name="currentIncome" type="number" placeholder="50000" />
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="currentExpenses">Current Expenses</Label>
-                        <Input id="currentExpenses" name="currentExpenses" type="number" defaultValue="3000" />
+                        <Input id="currentExpenses" name="currentExpenses" type="number" placeholder="30000" />
                     </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                         <Label htmlFor="incomeChange">Income Change</Label>
-                        <Input id="incomeChange" name="incomeChange" type="number" placeholder="+500 or -200" />
+                        <Input id="incomeChange" name="incomeChange" type="number" placeholder="+5000 or -2000" />
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="expenseChanges">Expense Changes</Label>
-                        <Input id="expenseChanges" name="expenseChanges" placeholder="Groceries +50" />
+                        <Input id="expenseChanges" name="expenseChanges" placeholder="Groceries +500" />
                     </div>
                 </div>
                 <Button type="submit" disabled={scenarioLoading}>
@@ -184,13 +168,25 @@ export function AiFeatures() {
             )}
           </TabsContent>
           <TabsContent value="safety-net">
-            <div className="space-y-4 mt-4">
+            <form onSubmit={handleSafetyNet} className="space-y-4 mt-4">
                 <p className="text-sm text-muted-foreground">Get recommendations for spending cuts during income reduction.</p>
-                <Button onClick={handleSafetyNet} disabled={safetyNetLoading}>
+                 <div className="space-y-2">
+                    <Label htmlFor="income">Current Income</Label>
+                    <Input id="income" name="income" type="number" placeholder="30000" />
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="expenses">Expenses (JSON)</Label>
+                    <Textarea id="expenses" name="expenses" placeholder='[{"category": "Rent", "amount": 12000}]' className="h-24 font-code text-xs"/>
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="essentialCategories">Essential Categories (comma-separated)</Label>
+                    <Input id="essentialCategories" name="essentialCategories" placeholder="Rent, Groceries" />
+                </div>
+                <Button type="submit" disabled={safetyNetLoading}>
                     {safetyNetLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Activate Safety Net
                 </Button>
-            </div>
+            </form>
             {safetyNetResult && (
                 <div className="mt-4 space-y-4 rounded-lg border bg-secondary/50 p-4">
                     <h4 className="font-semibold font-headline">Safety Net Recommendations</h4>

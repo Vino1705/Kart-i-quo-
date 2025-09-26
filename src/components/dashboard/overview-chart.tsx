@@ -7,14 +7,7 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart"
 
-const data = [
-  { month: "Jan", income: 1860, expenses: 800 },
-  { month: "Feb", income: 3050, expenses: 1000 },
-  { month: "Mar", income: 2370, expenses: 1200 },
-  { month: "Apr", income: 730, expenses: 1500 },
-  { month: "May", income: 2090, expenses: 900 },
-  { month: "Jun", income: 2140, expenses: 1100 },
-]
+const data: any[] = []
 
 const chartConfig = {
   income: {
@@ -30,30 +23,36 @@ const chartConfig = {
 export function OverviewChart() {
   return (
     <ChartContainer config={chartConfig} className="min-h-[200px] w-full">
-      <ResponsiveContainer width="100%" height={350}>
-        <BarChart data={data} accessibilityLayer>
-          <XAxis
-            dataKey="month"
-            stroke="hsl(var(--foreground))"
-            fontSize={12}
-            tickLine={false}
-            axisLine={false}
-          />
-          <YAxis
-            stroke="hsl(var(--foreground))"
-            fontSize={12}
-            tickLine={false}
-            axisLine={false}
-            tickFormatter={(value) => `₹${value}`}
-          />
-          <Tooltip 
-            cursor={{fill: 'hsl(var(--muted))'}}
-            content={<ChartTooltipContent />} 
-           />
-          <Bar dataKey="income" fill="hsl(var(--chart-2))" radius={[4, 4, 0, 0]} />
-          <Bar dataKey="expenses" fill="hsl(var(--chart-5))" radius={[4, 4, 0, 0]} />
-        </BarChart>
-      </ResponsiveContainer>
+      {data.length > 0 ? (
+        <ResponsiveContainer width="100%" height={350}>
+          <BarChart data={data} accessibilityLayer>
+            <XAxis
+              dataKey="month"
+              stroke="hsl(var(--foreground))"
+              fontSize={12}
+              tickLine={false}
+              axisLine={false}
+            />
+            <YAxis
+              stroke="hsl(var(--foreground))"
+              fontSize={12}
+              tickLine={false}
+              axisLine={false}
+              tickFormatter={(value) => `₹${value}`}
+            />
+            <Tooltip
+              cursor={{ fill: 'hsl(var(--muted))' }}
+              content={<ChartTooltipContent />}
+            />
+            <Bar dataKey="income" fill="hsl(var(--chart-2))" radius={[4, 4, 0, 0]} />
+            <Bar dataKey="expenses" fill="hsl(var(--chart-5))" radius={[4, 4, 0, 0]} />
+          </BarChart>
+        </ResponsiveContainer>
+      ) : (
+        <div className="flex h-[350px] w-full items-center justify-center text-muted-foreground">
+          No data to display yet.
+        </div>
+      )}
     </ChartContainer>
   )
 }

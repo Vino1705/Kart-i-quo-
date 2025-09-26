@@ -11,21 +11,14 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { CreditCard, LogOut, Settings, User } from 'lucide-react';
 import Link from 'next/link';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 export function UserNav() {
-  const userAvatar = PlaceHolderImages.find((p) => p.id === 'user-avatar');
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-8 w-8 rounded-full">
           <Avatar className="h-9 w-9 border">
-            {userAvatar && <AvatarImage
-              src={userAvatar.imageUrl}
-              alt="User avatar"
-              data-ai-hint={userAvatar.imageHint}
-            />}
             <AvatarFallback>U</AvatarFallback>
           </Avatar>
         </Button>
@@ -34,10 +27,10 @@ export function UserNav() {
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
             <p className="text-sm font-medium leading-none font-headline">
-              Alex (Student)
+              User
             </p>
             <p className="text-xs leading-none text-muted-foreground">
-              alex@example.com
+              user@example.com
             </p>
           </div>
         </DropdownMenuLabel>

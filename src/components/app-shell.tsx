@@ -20,7 +20,7 @@ import { ThemeToggle } from '@/components/theme-toggle';
 
 const navItems = [
   { href: '/', icon: LayoutGrid, label: 'Dashboard' },
-  { href: '#', icon: Target, label: 'Goals' },
+  { href: '/goals', icon: Target, label: 'Goals' },
   { href: '#', icon: BarChart, label: 'Reports' },
   { href: '#', icon: Settings, label: 'Settings' },
 ];
@@ -28,7 +28,7 @@ const navItems = [
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const heads = headers();
   const pathname = heads.get('next-url') ?? '';
-  const isAuthPage = pathname === '/login' || pathname === '/signup';
+  const isAuthPage = pathname === '/login' || pathname === '/signup' || pathname === '/onboarding';
 
   if (isAuthPage) {
     return (
