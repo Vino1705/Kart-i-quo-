@@ -5,13 +5,12 @@ import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 
 const firebaseConfig = {
-    apiKey: "AIzaSyCVfVjD-7pW0M-CoDS4d_1sU_Lafdsg6J4",
-    authDomain: "kart-i-quo-financial-guide-502a1.firebaseapp.com",
-    projectId: "kart-i-quo-financial-guide-502a1",
-    storageBucket: "kart-i-quo-financial-guide-502a1.appspot.com",
-    messagingSenderId: "367352358872",
-    appId: "1:367352358872:web:60a92795c65a95f2e87c80",
-    measurementId: "G-8Z0B3S6E31"
+  apiKey: "AIzaSyAVmRQCGVHAlSd_GQsOGq43w_eAgrvPro4",
+  authDomain: "adroit-cortex-448707-n5.firebaseapp.com",
+  projectId: "adroit-cortex-448707-n5",
+  storageBucket: "adroit-cortex-448707-n5.firebasestorage.app",
+  messagingSenderId: "618931367385",
+  appId: "1:618931367385:web:21d9aebf554a161281bdc8"
 };
 
 // Initialize Firebase
