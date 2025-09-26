@@ -1,4 +1,4 @@
-import { Goals } from '@/components/dashboard/goals';
+import { GoalsSummary } from '@/components/dashboard/goals-summary';
 import { RecentTransactions } from '@/components/dashboard/recent-transactions';
 import { AiFeatures } from '@/components/dashboard/ai-features';
 import {
@@ -16,7 +16,7 @@ export default function Home() {
       <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Income</CardTitle>
             <span className="text-2xl">💰</span>
           </CardHeader>
           <CardContent>
@@ -52,13 +52,13 @@ export default function Home() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Net Balance</CardTitle>
+            <CardTitle className="text-sm font-medium">Daily Limit</CardTitle>
             <span className="text-2xl">⚖️</span>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold font-headline">₹0.00</div>
+            <div className="text-2xl font-bold font-headline">₹300.00</div>
             <p className="text-xs text-muted-foreground">
-              Your current financial standing
+              Your suggested daily spend
             </p>
           </CardContent>
         </Card>
@@ -72,12 +72,12 @@ export default function Home() {
             <OverviewChart />
           </CardContent>
         </Card>
-        <Goals />
+        <div className="space-y-4">
+          <GoalsSummary />
+          <AiFeatures />
+        </div>
       </div>
-      <div className="grid gap-4 md:gap-8 lg:grid-cols-2 xl:grid-cols-3">
-        <RecentTransactions />
-        <AiFeatures />
-      </div>
+       <RecentTransactions />
     </>
   );
 }

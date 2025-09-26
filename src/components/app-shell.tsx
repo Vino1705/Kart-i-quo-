@@ -6,6 +6,8 @@ import {
   Target,
   BarChart,
   LayoutGrid,
+  ClipboardCheck,
+  Landmark,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -20,9 +22,11 @@ import { ThemeToggle } from '@/components/theme-toggle';
 
 const navItems = [
   { href: '/', icon: LayoutGrid, label: 'Dashboard' },
+  { href: '/daily-check-in', icon: ClipboardCheck, label: 'Daily Check-in' },
+  { href: '/expenses', icon: Landmark, label: 'Expenses' },
   { href: '/goals', icon: Target, label: 'Goals' },
-  { href: '#', icon: BarChart, label: 'Reports' },
-  { href: '#', icon: Settings, label: 'Settings' },
+  { href: '/reports', icon: BarChart, label: 'Reports' },
+  { href: '/settings', icon: Settings, label: 'Settings' },
 ];
 
 export default function AppShell({ children }: { children: React.ReactNode }) {

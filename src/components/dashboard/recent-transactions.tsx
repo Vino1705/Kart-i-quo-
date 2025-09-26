@@ -5,7 +5,6 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-  CardFooter
 } from '@/components/ui/card';
 import {
   Table,
@@ -16,18 +15,17 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '../ui/button';
-import { PlusCircle } from 'lucide-react';
+import Link from 'next/link';
 
 const transactions: Transaction[] = [];
 
 export function RecentTransactions() {
   return (
-    <Card className="xl:col-span-2">
+    <Card className="xl:col-span-3">
       <CardHeader>
         <CardTitle className="font-headline">Recent Transactions</CardTitle>
         <CardDescription>
-          A log of your recent income and expenses.
+          A log of your recent income and expenses. Go to the <Link href="/daily-check-in" className="underline">Daily Check-in</Link> page to add a transaction.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -72,12 +70,6 @@ export function RecentTransactions() {
           </div>
         )}
       </CardContent>
-       <CardFooter>
-        <Button variant="outline" className="w-full">
-          <PlusCircle className="mr-2 h-4 w-4" />
-          Add Transaction
-        </Button>
-      </CardFooter>
     </Card>
   );
 }
