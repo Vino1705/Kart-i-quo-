@@ -22,6 +22,7 @@ import {
 import { PlusCircle, Trash2, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import type { Transaction } from '@/lib/types';
+import { SpendingPieChart } from '@/components/daily-check-in/spending-pie-chart';
 
 export default function DailyCheckinPage() {
   const [dailyLimit, setDailyLimit] = useState(300);
@@ -161,17 +162,23 @@ export default function DailyCheckinPage() {
             </div>
 
             {todaysExpenses.length > 0 ? (
-                <ul className="border-t mt-4 pt-4 space-y-2">
-                    {todaysExpenses.map(exp => (
-                        <li key={exp.id} className="flex justify-between items-center bg-muted/50 p-2 rounded-md">
-                            <div>
-                                <p className="font-medium">{exp.description}</p>
-                                <p className="text-sm text-muted-foreground">{exp.category}</p>
-                            </div>
-                            <p className="font-medium text-red-500">-₹{exp.amount.toFixed(2)}</p>
-                        </li>
-                    ))}
-                </ul>
+              <div className="grid md:grid-cols-2 gap-8 items-start border-t mt-4 pt-4">
+                  <div>
+                    <h3 className="font-semibold mb-2 font-headline">Today's Spending Breakdown</h3>
+                    <SpendingPieChart expenses={todaysExpenses} />
+                  </div>
+                  <ul className="space-y-2">
+                      {todaysExpenses.map(exp => (
+                          <li key={exp.id} className="flex justify-between items-center bg-muted/50 p-2 rounded-md">
+                              <div>
+                                  <p className="font-medium">{exp.description}</p>
+                                  <p className="text-sm text-muted-foreground">{exp.category}</p>
+                              </div>
+                              <p className="font-medium text-red-500">-₹{exp.amount.toFixed(2)}</p>
+                          </li>
+                      ))}
+                  </ul>
+              </div>
             ) : (
              <div className="text-center text-muted-foreground py-8 border-t mt-4 pt-4">
               You haven't added any expenses for today yet.
