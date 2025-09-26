@@ -21,7 +21,7 @@ import Chatbot from '@/components/chatbot';
 import { ThemeToggle } from '@/components/theme-toggle';
 
 const navItems = [
-  { href: '/', icon: LayoutGrid, label: 'Dashboard' },
+  { href: '/dashboard', icon: LayoutGrid, label: 'Dashboard' },
   { href: '/daily-check-in', icon: ClipboardCheck, label: 'Daily Check-in' },
   { href: '/expenses', icon: Landmark, label: 'Expenses' },
   { href: '/goals', icon: Target, label: 'Goals' },
@@ -29,14 +29,16 @@ const navItems = [
   { href: '/settings', icon: Settings, label: 'Settings' },
 ];
 
+const publicPages = ['/', '/login', '/signup', '/onboarding'];
+
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const heads = headers();
   const pathname = heads.get('next-url') ?? '';
-  const isAuthPage = pathname === '/login' || pathname === '/signup' || pathname === '/onboarding';
+  const isPublicPage = publicPages.includes(pathname);
 
-  if (isAuthPage) {
+  if (isPublicPage) {
     return (
-      <main className="flex min-h-screen flex-col items-center justify-center p-4">
+      <main className="flex min-h-screen flex-col items-center justify-center">
         {children}
       </main>
     );

@@ -108,7 +108,7 @@ export default function OnboardingPage() {
       // Store data in Firestore
       await setDoc(doc(db, 'users', user.uid), { financials }, { merge: true });
 
-      router.push('/');
+      router.push('/dashboard');
 
     } catch (error) {
       console.error('Error calculating disposable income:', error);
