@@ -36,7 +36,16 @@ export default function Chatbot() {
     setLoading(true);
 
     try {
-      const result = await getFinancialAdvice({ query: input });
+      // Get user data from local storage for personalization
+      const userProfile = localStorage.getItem('financials');
+      const pastExpenses = localStorage.getItem('transactions');
+
+      const result = await getFinancialAdvice({ 
+        query: input,
+        ...(userProfile && { userProfile }),
+        ...(pastExpenses && { pastExpenses }),
+      });
+      
       const aiMessage: Message = { text: result.advice, isUser: false };
       setMessages((prev) => [...prev, aiMessage]);
     } catch (error) {
