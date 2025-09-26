@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { PlusCircle, Trash2 } from 'lucide-react';
+import { PlusCircle, Trash2, PiggyBank } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import type { Goal } from '@/lib/types';
@@ -26,10 +26,20 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
+} from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogClose,
+} from "@/components/ui/dialog"
 import { useAuth } from '@/hooks/use-auth';
 import { db } from '@/lib/firebase';
-import { collection, addDoc, onSnapshot, query, deleteDoc, doc } from 'firebase/firestore';
+import { collection, addDoc, onSnapshot, query, deleteDoc, doc, updateDoc, increment } from 'firebase/firestore';
 
 
 export default function GoalsPage() {
@@ -37,6 +47,8 @@ export default function GoalsPage() {
   const [goalName, setGoalName] = useState('');
   const [targetAmount, setTargetAmount] = useState<number>(0);
   const [deadline, setDeadline] = useState('');
+  const [contributionAmount, setContributionAmount] = useState<number>(0);
+
   const { toast } = useToast();
   const { user } = useAuth();
 
@@ -111,6 +123,37 @@ export default function GoalsPage() {
     }
   };
 
+  const handleContribute = async (goalId: string) => {
+    if(!user) return;
+    if (contributionAmount <= 0) {
+      toast({
+        title: 'Invalid Amount',
+        description: 'Please enter a positive amount to contribute.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    const goalRef = doc(db, `users/${user.uid}/goals`, goalId);
+
+    try {
+      await updateDoc(goalRef, {
+        currentAmount: increment(contributionAmount)
+      });
+      toast({
+        title: 'Contribution Successful!',
+        description: `You've added ₹${contributionAmount} to your goal.`,
+      });
+      setContributionAmount(0);
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to make contribution.',
+        variant: 'destructive',
+      });
+    }
+  };
+
   return (
     <div className="w-full max-w-4xl mx-auto space-y-8">
       <Card>
@@ -156,7 +199,7 @@ export default function GoalsPage() {
                         </AlertDialog>
 
                     </div>
-                    <div className="mt-2">
+                    <div className="mt-4">
                        <div className="flex justify-between items-center mb-1">
                           <p className="text-sm">
                             Saved: <span className="font-medium">₹{goal.currentAmount.toLocaleString('en-IN')}</span>
@@ -167,6 +210,44 @@ export default function GoalsPage() {
                         </div>
                       <Progress value={progress} aria-label={`${goal.name} progress`} />
                     </div>
+                     <div className="flex justify-end mt-4">
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button size="sm">
+                              <PiggyBank className="mr-2 h-4 w-4" />
+                              Contribute
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent className="sm:max-w-[425px]">
+                            <DialogHeader>
+                              <DialogTitle>Contribute to {goal.name}</DialogTitle>
+                              <DialogDescription>
+                                Enter the amount you want to add to this goal. Every bit helps!
+                              </DialogDescription>
+                            </DialogHeader>
+                            <div className="grid gap-4 py-4">
+                              <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="contribution-amount" className="text-right">
+                                  Amount (₹)
+                                </Label>
+                                <Input
+                                  id="contribution-amount"
+                                  type="number"
+                                  className="col-span-3"
+                                  value={contributionAmount || ''}
+                                  onChange={(e) => setContributionAmount(parseFloat(e.target.value))}
+                                  placeholder="e.g. 500"
+                                />
+                              </div>
+                            </div>
+                            <DialogFooter>
+                              <DialogClose asChild>
+                                <Button type="button" onClick={() => handleContribute(goal.id)}>Contribute</Button>
+                              </DialogClose>
+                            </DialogFooter>
+                          </DialogContent>
+                        </Dialog>
+                      </div>
                   </div>
                 );
               })
