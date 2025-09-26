@@ -15,6 +15,7 @@ import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { Transaction } from '@/lib/types';
 import { subMonths, format, startOfMonth, endOfMonth } from 'date-fns';
+import { CategorySpendingPieChart } from '@/components/reports/category-spending-pie-chart';
 
 type MonthlyData = {
   month: string;
@@ -23,7 +24,8 @@ type MonthlyData = {
 };
 
 export default function ReportsPage() {
-  const [chartData, setChartData] = useState<MonthlyData[]>([]);
+  const [monthlyChartData, setMonthlyChartData] = useState<MonthlyData[]>([]);
+  const [allTransactions, setAllTransactions] = useState<Transaction[]>([]);
   const { user } = useAuth();
 
   useEffect(() => {
@@ -34,8 +36,10 @@ export default function ReportsPage() {
       if (doc.exists()) {
         const transactionData = doc.data();
         const items: Transaction[] = transactionData.items || [];
+        setAllTransactions(items);
         
-        const processData = () => {
+        // Process data for monthly overview chart
+        const processMonthlyData = () => {
           const now = new Date();
           const monthlyTotals: MonthlyData[] = [];
 
@@ -61,15 +65,17 @@ export default function ReportsPage() {
 
             monthlyTotals.push({ month: monthName, income, expenses });
           }
-          setChartData(monthlyTotals);
+          setMonthlyChartData(monthlyTotals);
         };
         
-        processData();
+        processMonthlyData();
       }
     });
 
     return () => unsubscribe();
   }, [user]);
+
+  const allTimeExpenses = allTransactions.filter(t => t.type === 'expense');
 
   return (
     <div className="w-full max-w-6xl mx-auto space-y-8">
@@ -80,7 +86,7 @@ export default function ReportsPage() {
             Analyze your income and spending habits over time.
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="grid gap-8 lg:grid-cols-2">
           <Card>
             <CardHeader>
               <CardTitle className="font-headline text-xl">
@@ -91,7 +97,20 @@ export default function ReportsPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="pl-2">
-               <OverviewChart data={chartData} />
+               <OverviewChart data={monthlyChartData} />
+            </CardContent>
+          </Card>
+           <Card>
+            <CardHeader>
+              <CardTitle className="font-headline text-xl">
+                All-Time Spending by Category
+              </CardTitle>
+              <CardDescription>
+                A breakdown of your total expenses across all categories.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <CategorySpendingPieChart expenses={allTimeExpenses} />
             </CardContent>
           </Card>
         </CardContent>
