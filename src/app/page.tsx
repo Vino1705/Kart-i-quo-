@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -37,6 +38,7 @@ export default function Home() {
     }
 
     const fetchFinancials = async () => {
+      if (!user) return;
       const docRef = doc(db, 'users', user.uid);
       const docSnap = await getDoc(docRef);
 
@@ -48,6 +50,8 @@ export default function Home() {
           router.push('/onboarding');
         }
       } else {
+        // This case can happen if the user exists in Auth but not in Firestore.
+        // It's good practice to create their Firestore doc here or send to onboarding.
         router.push('/onboarding');
       }
     };
@@ -121,9 +125,10 @@ export default function Home() {
         <Card className="xl:col-span-2">
           <CardHeader>
             <CardTitle className="font-headline">Overview</CardTitle>
+             <CardDescription>A quick look at your recent financial activity. For more details, visit the <Link href="/reports" className="underline">Reports page</Link>.</CardDescription>
           </CardHeader>
           <CardContent className="pl-2">
-            <OverviewChart />
+            <OverviewChart data={[]} />
           </CardContent>
         </Card>
         <div className="space-y-4">

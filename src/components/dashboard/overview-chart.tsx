@@ -1,3 +1,4 @@
+
 "use client"
 
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from "recharts"
@@ -6,8 +7,6 @@ import {
   ChartContainer,
   ChartTooltipContent,
 } from "@/components/ui/chart"
-
-const data: any[] = []
 
 const chartConfig = {
   income: {
@@ -20,10 +19,10 @@ const chartConfig = {
   },
 } satisfies ChartConfig
 
-export function OverviewChart() {
+export function OverviewChart({ data }: { data: any[] }) {
   return (
     <ChartContainer config={chartConfig} className="min-h-[200px] w-full">
-      {data.length > 0 ? (
+      {data && data.length > 0 ? (
         <ResponsiveContainer width="100%" height={350}>
           <BarChart data={data} accessibilityLayer>
             <XAxis
@@ -44,13 +43,13 @@ export function OverviewChart() {
               cursor={{ fill: 'hsl(var(--muted))' }}
               content={<ChartTooltipContent />}
             />
-            <Bar dataKey="income" fill="hsl(var(--chart-2))" radius={[4, 4, 0, 0]} />
-            <Bar dataKey="expenses" fill="hsl(var(--chart-5))" radius={[4, 4, 0, 0]} />
+            <Bar dataKey="income" fill="var(--color-income)" radius={[4, 4, 0, 0]} />
+            <Bar dataKey="expenses" fill="var(--color-expenses)" radius={[4, 4, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       ) : (
         <div className="flex h-[350px] w-full items-center justify-center text-muted-foreground">
-          No data to display yet.
+          Not enough transaction data to display the chart. Log some transactions to get started.
         </div>
       )}
     </ChartContainer>
