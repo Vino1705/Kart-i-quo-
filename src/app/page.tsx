@@ -20,7 +20,7 @@ export default function Home() {
             <span className="text-2xl">💰</span>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold font-headline">$45,231.89</div>
+            <div className="text-2xl font-bold font-headline">₹45,231.89</div>
             <p className="text-xs text-muted-foreground">
               +20.1% from last month
             </p>
@@ -32,7 +32,7 @@ export default function Home() {
             <span className="text-2xl">🏦</span>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold font-headline">$12,234.50</div>
+            <div className="text-2xl font-bold font-headline">₹12,234.50</div>
             <p className="text-xs text-muted-foreground">
               +15% from last month
             </p>
@@ -44,7 +44,7 @@ export default function Home() {
             <span className="text-2xl">💸</span>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold font-headline">$8,123.00</div>
+            <div className="text-2xl font-bold font-headline">₹8,123.00</div>
             <p className="text-xs text-muted-foreground">
               +5% from last month
             </p>
@@ -56,7 +56,7 @@ export default function Home() {
             <span className="text-2xl">⚖️</span>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold font-headline">$33,000.00</div>
+            <div className="text-2xl font-bold font-headline">₹33,000.00</div>
             <p className="text-xs text-muted-foreground">
               Your current financial standing
             </p>

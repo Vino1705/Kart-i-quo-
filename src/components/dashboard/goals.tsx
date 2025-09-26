@@ -52,7 +52,7 @@ export function Goals() {
               <div className="flex justify-between items-center mb-1">
                 <p className="font-medium">{goal.name}</p>
                 <p className="text-sm text-muted-foreground">
-                  ${goal.currentAmount.toLocaleString()} / $
+                  ₹{goal.currentAmount.toLocaleString()} / ₹
                   {goal.targetAmount.toLocaleString()}
                 </p>
               </div>

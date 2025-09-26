@@ -99,7 +99,7 @@ export function RecentTransactions() {
                       : 'text-red-500'
                   }`}
                 >
-                  {transaction.type === 'income' ? '+' : '-'}$
+                  {transaction.type === 'income' ? '+' : '-'}₹
                   {transaction.amount.toFixed(2)}
                 </TableCell>
               </TableRow>

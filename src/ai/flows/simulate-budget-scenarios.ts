@@ -13,8 +13,8 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const SimulateBudgetScenariosInputSchema = z.object({
-  currentIncome: z.number().describe('The user\'s current monthly income.'),
-  currentExpenses: z.number().describe('The user\'s current monthly expenses.'),
+  currentIncome: z.number().describe("The user's current monthly income."),
+  currentExpenses: z.number().describe("The user's current monthly expenses."),
   incomeChange: z
     .number()
     .optional()
@@ -58,7 +58,7 @@ const prompt = ai.definePrompt({
   name: 'simulateBudgetScenariosPrompt',
   input: {schema: SimulateBudgetScenariosInputSchema},
   output: {schema: SimulateBudgetScenariosOutputSchema},
-  prompt: `You are a financial advisor helping users simulate budget scenarios.
+  prompt: `You are a financial advisor helping users simulate budget scenarios in Indian Rupees (₹).
 
   Based on the user's current financial situation and potential changes, you will project the impact on their budget.
 

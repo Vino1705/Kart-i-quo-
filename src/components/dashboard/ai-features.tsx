@@ -138,7 +138,7 @@ export function AiFeatures() {
             {forecastResult && (
               <div className="mt-4 space-y-2 rounded-lg border bg-secondary/50 p-4">
                 <h4 className="font-semibold font-headline">Forecast Result</h4>
-                <p><strong>Suggested Daily Limit:</strong> ${forecastResult.suggestedDailyLimit.toFixed(2)}</p>
+                <p><strong>Suggested Daily Limit:</strong> ₹{forecastResult.suggestedDailyLimit.toFixed(2)}</p>
                 <p><strong>Explanation:</strong> {forecastResult.explanation}</p>
                 <p><strong>Forecasted Spending:</strong></p>
                 <pre className="text-xs whitespace-pre-wrap font-code">{forecastResult.forecastedSpending}</pre>
@@ -176,9 +176,9 @@ export function AiFeatures() {
             {scenarioResult && (
                  <div className="mt-4 space-y-2 rounded-lg border bg-secondary/50 p-4">
                     <h4 className="font-semibold font-headline">{scenarioResult.scenarioDescription}</h4>
-                    <p><strong>Projected Income:</strong> ${scenarioResult.projectedIncome.toLocaleString()}</p>
-                    <p><strong>Projected Expenses:</strong> ${scenarioResult.projectedExpenses.toLocaleString()}</p>
-                    <p><strong>Net Result:</strong> ${scenarioResult.netResult.toLocaleString()}</p>
+                    <p><strong>Projected Income:</strong> ₹{scenarioResult.projectedIncome.toLocaleString()}</p>
+                    <p><strong>Projected Expenses:</strong> ₹{scenarioResult.projectedExpenses.toLocaleString()}</p>
+                    <p><strong>Net Result:</strong> ₹{scenarioResult.netResult.toLocaleString()}</p>
                     <p><strong>Impact:</strong> {scenarioResult.impactAnalysis}</p>
                 </div>
             )}
@@ -197,7 +197,7 @@ export function AiFeatures() {
                     <div>
                         <h5 className="font-medium">Prioritized Expenses:</h5>
                         <ul className="list-disc pl-5">
-                            {safetyNetResult.prioritizedExpenses.map(exp => <li key={exp.category}>{exp.category}: ${exp.amount}</li>)}
+                            {safetyNetResult.prioritizedExpenses.map(exp => <li key={exp.category}>{exp.category}: ₹{exp.amount}</li>)}
                         </ul>
                     </div>
                      <div>
