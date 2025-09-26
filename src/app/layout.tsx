@@ -4,6 +4,7 @@ import { Toaster } from '@/components/ui/toaster';
 import AppShell from '@/components/app-shell';
 import { ThemeProvider } from '@/components/theme-provider';
 import { AuthProvider } from '@/hooks/use-auth.tsx';
+import { Suspense } from 'react';
 
 export const metadata: Metadata = {
   title: 'Kart-I-Quo',
@@ -37,7 +38,9 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <AuthProvider>
-            <AppShell>{children}</AppShell>
+            <Suspense fallback={<div>Loading...</div>}>
+              <AppShell>{children}</AppShell>
+            </Suspense>
             <Toaster />
           </AuthProvider>
         </ThemeProvider>
