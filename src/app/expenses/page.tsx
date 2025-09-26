@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -12,12 +13,34 @@ import {
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { PlusCircle, Trash2, Loader2 } from 'lucide-react';
+import { PlusCircle, Trash2, Loader2, Edit } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { calculateDisposableIncome } from '@/ai/flows/calculate-disposable-income';
 import { useAuth } from '@/hooks/use-auth';
 import { db } from '@/lib/firebase';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogClose,
+} from "@/components/ui/dialog"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+
 
 type Expense = {
   id: number;
@@ -29,6 +52,7 @@ export default function ExpensesPage() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [newExpenseName, setNewExpenseName] = useState('');
   const [newExpenseAmount, setNewExpenseAmount] = useState<number>(0);
+  const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
@@ -84,6 +108,7 @@ export default function ExpensesPage() {
       toast({ title: "AI Error", description: "Failed to recalculate financial summary.", variant: "destructive" });
     } finally {
       setLoading(false);
+      setEditingExpense(null);
     }
   };
 
@@ -98,6 +123,12 @@ export default function ExpensesPage() {
     setNewExpenseName('');
     setNewExpenseAmount(0);
   };
+
+  const handleEditExpense = () => {
+    if (!editingExpense) return;
+    const updatedExpenses = expenses.map(exp => exp.id === editingExpense.id ? editingExpense : exp);
+    updateFinancials(updatedExpenses);
+  }
 
   const handleRemoveExpense = (id: number) => {
     const updatedExpenses = expenses.filter(exp => exp.id !== id);
@@ -117,17 +148,83 @@ export default function ExpensesPage() {
         <CardContent>
           <div className="space-y-4">
             {expenses.length > 0 ? (
-              <div className="grid gap-4">
+              <ul className="space-y-3">
                 {expenses.map((expense) => (
-                  <div key={expense.id} className="flex items-center gap-2">
-                    <Input value={expense.name} readOnly />
-                    <Input type="number" value={expense.amount} readOnly />
-                    <Button variant="ghost" size="icon" onClick={() => handleRemoveExpense(expense.id)} disabled={loading}>
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
+                  <li key={expense.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                    <div>
+                      <p className="font-medium">{expense.name}</p>
+                      <p className="text-muted-foreground">₹{expense.amount.toLocaleString('en-IN')}</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                       <Dialog onOpenChange={(isOpen) => !isOpen && setEditingExpense(null)}>
+                        <DialogTrigger asChild>
+                          <Button variant="ghost" size="icon" onClick={() => setEditingExpense(expense)}>
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="sm:max-w-[425px]">
+                          <DialogHeader>
+                            <DialogTitle>Edit Expense</DialogTitle>
+                            <DialogDescription>
+                              Update the details for your mandatory expense.
+                            </DialogDescription>
+                          </DialogHeader>
+                          {editingExpense && (
+                            <div className="grid gap-4 py-4">
+                              <div className="grid gap-2">
+                                <Label htmlFor="edit-expense-name">Expense Name</Label>
+                                <Input
+                                  id="edit-expense-name"
+                                  value={editingExpense.name}
+                                  onChange={(e) => setEditingExpense({...editingExpense, name: e.target.value})}
+                                />
+                              </div>
+                              <div className="grid gap-2">
+                                <Label htmlFor="edit-expense-amount">Amount (₹)</Label>
+                                <Input
+                                  id="edit-expense-amount"
+                                  type="number"
+                                  value={editingExpense.amount || ''}
+                                  onChange={(e) => setEditingExpense({...editingExpense, amount: parseFloat(e.target.value) || 0})}
+                                />
+                              </div>
+                            </div>
+                          )}
+                          <DialogFooter>
+                            <DialogClose asChild>
+                              <Button type="button" onClick={handleEditExpense} disabled={loading}>
+                                {loading ? 'Saving...' : 'Save Changes'}
+                              </Button>
+                            </DialogClose>
+                          </DialogFooter>
+                        </DialogContent>
+                      </Dialog>
+
+                      <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive">
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                This will permanently delete the "{expense.name}" expense.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => handleRemoveExpense(expense.id)} disabled={loading} className="bg-destructive hover:bg-destructive/90">
+                                Delete
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                    </div>
+                  </li>
                 ))}
-              </div>
+              </ul>
             ) : (
                <div className="text-center text-muted-foreground py-8 border rounded-md">
                 You haven't added any mandatory expenses yet.
@@ -166,3 +263,5 @@ export default function ExpensesPage() {
     </div>
   );
 }
+
+    
