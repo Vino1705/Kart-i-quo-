@@ -106,7 +106,7 @@ export default function OnboardingPage() {
       };
 
       // Store data in Firestore
-      await setDoc(doc(db, 'users', user.uid), { financials });
+      await setDoc(doc(db, 'users', user.uid), { financials }, { merge: true });
 
       router.push('/');
 
