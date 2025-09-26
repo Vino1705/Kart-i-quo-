@@ -118,7 +118,7 @@ export default function DailyCheckinPage() {
         <CardHeader>
           <CardTitle className="font-headline">Daily Spending Limit</CardTitle>
           <CardDescription>
-            Your suggested daily spending limit is shown below. You can adjust it if needed.
+            Your daily spending limit is suggested by our AI based on your income and mandatory expenses to help you meet your savings goals. You can adjust it if needed.
           </CardDescription>
         </CardHeader>
         <CardContent>
