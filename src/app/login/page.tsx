@@ -15,7 +15,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Logo } from '@/components/logo';
 import { useToast } from '@/hooks/use-toast';
-import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
+import { signInWithEmailAndPassword, signInWithRedirect, GoogleAuthProvider } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { Loader2 } from 'lucide-react';
 
@@ -47,16 +47,17 @@ export default function LoginPage() {
     setLoading(true);
     const provider = new GoogleAuthProvider();
     try {
-      await signInWithPopup(auth, provider);
-      router.push('/dashboard');
+      await signInWithRedirect(auth, provider);
+      // The redirect will navigate away from the page, so the code below
+      // might not execute if the redirect is successful. The auth state
+      // will be handled by the onAuthStateChanged listener in useAuth.
     } catch (error: any) {
       toast({
         title: 'Google Login Failed',
         description: error.message,
         variant: 'destructive',
       });
-    } finally {
-      setLoading(false);
+       setLoading(false);
     }
   };
 
@@ -109,6 +110,7 @@ export default function LoginPage() {
             Login
           </Button>
           <Button variant="outline" className="w-full" onClick={handleGoogleLogin} disabled={loading}>
+            {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             <svg className="mr-2 h-4 w-4" viewBox="0 0 48 48">
                 <path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039L38.388 8.922C34.411 5.373 29.5 3.5 24 3.5 13.75 3.5 5.5 11.75 5.5 22s8.25 18.5 18.5 18.5S42.5 32.25 42.5 22c0-1.25-.125-2.5-.389-3.917z"></path>
                 <path fill="#FF3D00" d="M6.306 14.691l6.571 4.819C14.655 15.108 18.961 13 24 13c3.059 0 5.842 1.154 7.961 3.039l5.427-5.104C34.411 5.373 29.5 3.5 24 3.5 16.318 3.5 9.656 8.337 6.306 14.691z"></path>
