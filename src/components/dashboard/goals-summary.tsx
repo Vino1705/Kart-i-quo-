@@ -13,16 +13,28 @@ import { Target } from 'lucide-react';
 import Link from 'next/link';
 import type { Goal } from '@/lib/types';
 import { Progress } from '../ui/progress';
+import { useAuth } from '@/hooks/use-auth';
+import { collection, onSnapshot, query } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 
 export function GoalsSummary() {
   const [goals, setGoals] = useState<Goal[]>([]);
+  const { user } = useAuth();
 
   useEffect(() => {
-    const storedGoals = localStorage.getItem('goals');
-    if (storedGoals) {
-      setGoals(JSON.parse(storedGoals));
-    }
-  }, []);
+    if (!user) return;
+
+    const q = query(collection(db, `users/${user.uid}/goals`));
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
+      const userGoals: Goal[] = [];
+      querySnapshot.forEach((doc) => {
+        userGoals.push({ id: doc.id, ...doc.data() } as Goal);
+      });
+      setGoals(userGoals);
+    });
+
+    return () => unsubscribe();
+  }, [user]);
 
   return (
     <Card>

@@ -23,6 +23,7 @@ const chartConfig = {
 
 export function SpendingPieChart({ expenses }: SpendingPieChartProps) {
   const aggregatedData = React.useMemo(() => {
+    if (!expenses) return [];
     const categoryMap = new Map<string, number>();
     expenses.forEach((expense) => {
       const currentAmount = categoryMap.get(expense.category) || 0;
@@ -31,11 +32,11 @@ export function SpendingPieChart({ expenses }: SpendingPieChartProps) {
     return Array.from(categoryMap.entries()).map(([category, amount]) => ({
       name: category,
       value: amount,
-      fill: `var(--color-${category})`
+      fill: chartConfig[category as keyof typeof chartConfig]?.color || 'hsl(var(--muted))'
     }));
   }, [expenses]);
   
-  if (aggregatedData.length === 0) {
+  if (!aggregatedData || aggregatedData.length === 0) {
     return (
         <div className="flex h-[250px] w-full items-center justify-center text-muted-foreground text-sm">
             Log an expense to see your spending breakdown.

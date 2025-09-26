@@ -18,36 +18,31 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
+import { useAuth } from '@/hooks/use-auth';
+import { doc, onSnapshot } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 
 export function RecentTransactions() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const { user } = useAuth();
 
   useEffect(() => {
-    const storedTransactions = localStorage.getItem('transactions');
-    if (storedTransactions) {
-      const parsedTransactions: Transaction[] = JSON.parse(storedTransactions);
-      // Sort by date descending and take the last 5
-      const recentTransactions = parsedTransactions
-        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-        .slice(0, 5);
-      setTransactions(recentTransactions);
-    }
+    if (!user) return;
 
-    // Optional: Listen for storage changes to update in real-time across tabs
-    const handleStorageChange = () => {
-       const stored = localStorage.getItem('transactions');
-       if(stored) {
-         const parsed: Transaction[] = JSON.parse(stored);
-         const recent = parsed
+    const transactionsDocRef = doc(db, 'users', user.uid, 'transactions', 'data');
+    const unsubscribe = onSnapshot(transactionsDocRef, (doc) => {
+      if (doc.exists()) {
+        const transactionData = doc.data();
+        const items: Transaction[] = transactionData.items || [];
+        const recentTransactions = items
           .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
           .slice(0, 5);
-         setTransactions(recent);
-       }
-    };
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
+        setTransactions(recentTransactions);
+      }
+    });
 
-  }, []);
+    return () => unsubscribe();
+  }, [user]);
 
   return (
     <Card className="xl:col-span-3">

@@ -17,6 +17,9 @@ import { Logo } from '@/components/logo';
 import { PlusCircle, Trash2, Loader2 } from 'lucide-react';
 import { calculateDisposableIncome } from '@/ai/flows/calculate-disposable-income';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/use-auth';
+import { doc, setDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 
 type Expense = {
   id: number;
@@ -32,6 +35,7 @@ export default function OnboardingPage() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const handleAddExpense = () => {
     setExpenses([
@@ -62,6 +66,14 @@ export default function OnboardingPage() {
   };
 
   const handleFinishSetup = async () => {
+    if (!user) {
+      toast({
+        title: 'Not Authenticated',
+        description: 'You must be logged in to complete onboarding.',
+        variant: 'destructive',
+      });
+      return;
+    }
     setLoading(true);
     if (!monthlyIncome || monthlyIncome <= 0) {
       toast({
@@ -83,8 +95,7 @@ export default function OnboardingPage() {
 
       const totalMandatoryExpenses = mandatoryExpenses.reduce((acc, exp) => acc + exp.amount, 0);
 
-      // Store data in localStorage
-      localStorage.setItem('financials', JSON.stringify({
+      const financials = {
         totalIncome: monthlyIncome,
         mandatoryExpenses: mandatoryExpenses,
         totalMandatoryExpenses: totalMandatoryExpenses,
@@ -92,10 +103,10 @@ export default function OnboardingPage() {
         dailySpendingLimit: result.dailySpendingLimit,
         goalSavingsSuggestion: result.goalSavingsSuggestion,
         explanation: result.explanation,
-      }));
-       localStorage.setItem('transactions', JSON.stringify([]));
-       localStorage.setItem('goals', JSON.stringify([]));
+      };
 
+      // Store data in Firestore
+      await setDoc(doc(db, 'users', user.uid), { financials });
 
       router.push('/');
 

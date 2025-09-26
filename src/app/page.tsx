@@ -13,6 +13,9 @@ import {
 } from '@/components/ui/card';
 import { OverviewChart } from '@/components/dashboard/overview-chart';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/hooks/use-auth';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 
 type Financials = {
   totalIncome: number;
@@ -24,18 +27,35 @@ type Financials = {
 export default function Home() {
   const [financials, setFinancials] = useState<Financials | null>(null);
   const router = useRouter();
+  const { user, loading } = useAuth();
 
   useEffect(() => {
-    const storedFinancials = localStorage.getItem('financials');
-    if (storedFinancials) {
-      setFinancials(JSON.parse(storedFinancials));
-    } else {
-      // If no financials, redirect to onboarding
-      router.push('/onboarding');
+    if (loading) return;
+    if (!user) {
+      router.push('/login');
+      return;
     }
-  }, [router]);
 
-  if (!financials) {
+    const fetchFinancials = async () => {
+      const docRef = doc(db, 'users', user.uid);
+      const docSnap = await getDoc(docRef);
+
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        if (data.financials) {
+          setFinancials(data.financials);
+        } else {
+          router.push('/onboarding');
+        }
+      } else {
+        router.push('/onboarding');
+      }
+    };
+
+    fetchFinancials();
+  }, [user, loading, router]);
+
+  if (loading || !financials) {
     return (
       <div className="flex justify-center items-center h-full">
         <p>Loading your financial dashboard...</p>

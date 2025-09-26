@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Bot, Loader2, Send, X, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -15,6 +15,11 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getFinancialAdvice } from '@/ai/flows/personalized-financial-advice';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from './ui/scroll-area';
+import { useAuth } from '@/hooks/use-auth';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import type { Transaction } from '@/lib/types';
+
 
 interface Message {
   text: string;
@@ -26,6 +31,32 @@ export default function Chatbot() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const { user } = useAuth();
+  const [financials, setFinancials] = useState<string | null>(null);
+  const [transactions, setTransactions] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!user || !isOpen) return;
+
+    const fetchData = async () => {
+      // Fetch user financials
+      const userDocRef = doc(db, 'users', user.uid);
+      const userDocSnap = await getDoc(userDocRef);
+      if (userDocSnap.exists() && userDocSnap.data().financials) {
+        setFinancials(JSON.stringify(userDocSnap.data().financials));
+      }
+
+      // Fetch user transactions
+      const transactionsColRef = doc(db, 'users', user.uid, 'transactions', 'data');
+      const transactionsSnap = await getDoc(transactionsColRef);
+       if (transactionsSnap.exists()) {
+        setTransactions(JSON.stringify(transactionsSnap.data().items));
+      }
+    };
+
+    fetchData();
+  }, [user, isOpen]);
+
 
   const handleSend = async () => {
     if (input.trim() === '') return;
@@ -36,14 +67,10 @@ export default function Chatbot() {
     setLoading(true);
 
     try {
-      // Get user data from local storage for personalization
-      const userProfile = localStorage.getItem('financials');
-      const pastExpenses = localStorage.getItem('transactions');
-
       const result = await getFinancialAdvice({ 
         query: input,
-        ...(userProfile && { userProfile }),
-        ...(pastExpenses && { pastExpenses }),
+        ...(financials && { userProfile: financials }),
+        ...(transactions && { pastExpenses: transactions }),
       });
       
       const aiMessage: Message = { text: result.advice, isUser: false };
@@ -129,9 +156,10 @@ export default function Chatbot() {
                     >
                         {message.text}
                     </div>
-                    {message.isUser && (
+                    {message.isUser && user && (
                         <Avatar className="h-8 w-8">
-                        <AvatarFallback>U</AvatarFallback>
+                          <AvatarImage src={user.photoURL || ''} alt={user.displayName || 'User'} />
+                          <AvatarFallback>{user.displayName?.charAt(0) || 'U'}</AvatarFallback>
                         </Avatar>
                     )}
                     </div>

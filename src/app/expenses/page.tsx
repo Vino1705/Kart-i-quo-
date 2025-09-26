@@ -15,6 +15,9 @@ import { Label } from '@/components/ui/label';
 import { PlusCircle, Trash2, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { calculateDisposableIncome } from '@/ai/flows/calculate-disposable-income';
+import { useAuth } from '@/hooks/use-auth';
+import { db } from '@/lib/firebase';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
 
 type Expense = {
   id: number;
@@ -28,25 +31,34 @@ export default function ExpensesPage() {
   const [newExpenseAmount, setNewExpenseAmount] = useState<number>(0);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   useEffect(() => {
-    const storedFinancials = localStorage.getItem('financials');
-    if (storedFinancials) {
-      const financials = JSON.parse(storedFinancials);
-      setExpenses(financials.mandatoryExpenses || []);
-    }
-  }, []);
+    if (!user) return;
+    
+    const fetchExpenses = async () => {
+      const userDocRef = doc(db, 'users', user.uid);
+      const docSnap = await getDoc(userDocRef);
+      if (docSnap.exists() && docSnap.data().financials) {
+        setExpenses(docSnap.data().financials.mandatoryExpenses || []);
+      }
+    };
+    fetchExpenses();
+  }, [user]);
 
   const updateFinancials = async (updatedExpenses: Expense[]) => {
+    if (!user) return;
     setLoading(true);
-    const storedFinancials = localStorage.getItem('financials');
-    if (!storedFinancials) {
+
+    const userDocRef = doc(db, 'users', user.uid);
+    const docSnap = await getDoc(userDocRef);
+    if (!docSnap.exists() || !docSnap.data().financials) {
       toast({ title: "Error", description: "Could not find financial data.", variant: "destructive" });
       setLoading(false);
       return;
     }
 
-    const financials = JSON.parse(storedFinancials);
+    const financials = docSnap.data().financials;
     const totalIncome = financials.totalIncome;
 
     try {
@@ -64,7 +76,7 @@ export default function ExpensesPage() {
         ...result,
       };
 
-      localStorage.setItem('financials', JSON.stringify(newFinancials));
+      await updateDoc(userDocRef, { financials: newFinancials });
       setExpenses(updatedExpenses);
       toast({ title: "Success", description: "Your expenses and financial summary have been updated." });
 

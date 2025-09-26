@@ -23,6 +23,9 @@ import { PlusCircle, Trash2, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import type { Transaction } from '@/lib/types';
 import { SpendingPieChart } from '@/components/daily-check-in/spending-pie-chart';
+import { useAuth } from '@/hooks/use-auth';
+import { db } from '@/lib/firebase';
+import { doc, getDoc, setDoc, updateDoc, arrayUnion, onSnapshot } from 'firebase/firestore';
 
 export default function DailyCheckinPage() {
   const [dailyLimit, setDailyLimit] = useState(300);
@@ -33,31 +36,48 @@ export default function DailyCheckinPage() {
   const [amount, setAmount] = useState<number>(0);
 
   const { toast } = useToast();
+  const { user } = useAuth();
 
   useEffect(() => {
-    const storedFinancials = localStorage.getItem('financials');
-    if (storedFinancials) {
-      const financials = JSON.parse(storedFinancials);
-      setDailyLimit(financials.dailySpendingLimit || 300);
-    }
+    if (!user) return;
+
+    // Fetch financials for daily limit
+    const userDocRef = doc(db, 'users', user.uid);
+    const fetchFinancials = async () => {
+      const docSnap = await getDoc(userDocRef);
+      if (docSnap.exists() && docSnap.data().financials) {
+        setDailyLimit(docSnap.data().financials.dailySpendingLimit || 300);
+      }
+    };
+    fetchFinancials();
     
-    const storedTransactions = localStorage.getItem('transactions');
-    if (storedTransactions) {
-      setTransactions(JSON.parse(storedTransactions));
-    }
-  }, []);
+    // Listen for transactions
+    const transactionsDocRef = doc(db, 'users', user.uid, 'transactions', 'data');
+    const unsubscribe = onSnapshot(transactionsDocRef, (doc) => {
+      if (doc.exists()) {
+        const transactionData = doc.data();
+        setTransactions(transactionData.items || []);
+      }
+    });
+
+    return () => unsubscribe();
+  }, [user]);
   
-  const handleUpdateLimit = () => {
-    const storedFinancials = localStorage.getItem('financials');
-    if (storedFinancials) {
-        const financials = JSON.parse(storedFinancials);
-        financials.dailySpendingLimit = dailyLimit;
-        localStorage.setItem('financials', JSON.stringify(financials));
+  const handleUpdateLimit = async () => {
+    if (!user) return;
+    const userDocRef = doc(db, 'users', user.uid);
+    try {
+        await updateDoc(userDocRef, {
+            'financials.dailySpendingLimit': dailyLimit
+        });
         toast({ title: 'Success', description: 'Daily limit updated!' });
+    } catch (error) {
+        toast({ title: 'Error', description: 'Failed to update daily limit.', variant: 'destructive' });
     }
   }
 
-  const handleAddExpense = () => {
+  const handleAddExpense = async () => {
+    if (!user) return;
     if (!description || !category || !amount || amount <= 0) {
       toast({
         title: 'Invalid Expense',
@@ -75,16 +95,19 @@ export default function DailyCheckinPage() {
       type: 'expense'
     };
 
-    const updatedTransactions = [...transactions, newTransaction];
-    setTransactions(updatedTransactions);
-    localStorage.setItem('transactions', JSON.stringify(updatedTransactions));
+    const transactionsDocRef = doc(db, 'users', user.uid, 'transactions', 'data');
+    
+    try {
+        await setDoc(transactionsDocRef, { items: arrayUnion(newTransaction) }, { merge: true });
+        // Reset form
+        setDescription('');
+        setCategory('');
+        setAmount(0);
 
-    // Reset form
-    setDescription('');
-    setCategory('');
-    setAmount(0);
-
-    toast({ title: 'Expense Added', description: `Logged ${description} for ₹${amount}` });
+        toast({ title: 'Expense Added', description: `Logged ${description} for ₹${amount}` });
+    } catch (error) {
+        toast({ title: 'Error', description: 'Failed to add expense.', variant: 'destructive' });
+    }
   };
   
   const todaysExpenses = transactions.filter(t => new Date(t.date).toDateString() === new Date().toDateString());

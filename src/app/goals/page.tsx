@@ -27,6 +27,10 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
+import { useAuth } from '@/hooks/use-auth';
+import { db } from '@/lib/firebase';
+import { collection, addDoc, onSnapshot, query, deleteDoc, doc } from 'firebase/firestore';
+
 
 export default function GoalsPage() {
   const [goals, setGoals] = useState<Goal[]>([]);
@@ -34,15 +38,25 @@ export default function GoalsPage() {
   const [targetAmount, setTargetAmount] = useState<number>(0);
   const [deadline, setDeadline] = useState('');
   const { toast } = useToast();
+  const { user } = useAuth();
 
   useEffect(() => {
-    const storedGoals = localStorage.getItem('goals');
-    if (storedGoals) {
-      setGoals(JSON.parse(storedGoals));
-    }
-  }, []);
+    if (!user) return;
 
-  const handleAddGoal = () => {
+    const q = query(collection(db, `users/${user.uid}/goals`));
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
+      const userGoals: Goal[] = [];
+      querySnapshot.forEach((doc) => {
+        userGoals.push({ id: doc.id, ...doc.data() } as Goal);
+      });
+      setGoals(userGoals);
+    });
+
+    return () => unsubscribe();
+  }, [user]);
+
+  const handleAddGoal = async () => {
+    if (!user) return;
     if (!goalName || !targetAmount || !deadline) {
       toast({
         title: 'Missing Information',
@@ -52,37 +66,49 @@ export default function GoalsPage() {
       return;
     }
 
-    const newGoal: Goal = {
-      id: Date.now().toString(),
+    const newGoal: Omit<Goal, 'id'> = {
       name: goalName,
       targetAmount,
       currentAmount: 0, // Goals start with 0 saved
       deadline,
     };
 
-    const updatedGoals = [...goals, newGoal];
-    setGoals(updatedGoals);
-    localStorage.setItem('goals', JSON.stringify(updatedGoals));
+    try {
+      await addDoc(collection(db, `users/${user.uid}/goals`), newGoal);
+      
+      // Reset form
+      setGoalName('');
+      setTargetAmount(0);
+      setDeadline('');
 
-    // Reset form
-    setGoalName('');
-    setTargetAmount(0);
-    setDeadline('');
-
-    toast({
-      title: 'Goal Added!',
-      description: `You're now tracking your goal: ${goalName}.`,
-    });
+      toast({
+        title: 'Goal Added!',
+        description: `You're now tracking your goal: ${goalName}.`,
+      });
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to add goal.',
+        variant: 'destructive',
+      });
+    }
   };
   
-  const handleRemoveGoal = (id: string) => {
-    const updatedGoals = goals.filter(goal => goal.id !== id);
-    setGoals(updatedGoals);
-    localStorage.setItem('goals', JSON.stringify(updatedGoals));
-    toast({
-      title: 'Goal Removed',
-      description: 'Your goal has been successfully removed.',
-    });
+  const handleRemoveGoal = async (id: string) => {
+    if (!user) return;
+    try {
+      await deleteDoc(doc(db, `users/${user.uid}/goals`, id));
+      toast({
+        title: 'Goal Removed',
+        description: 'Your goal has been successfully removed.',
+      });
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to remove goal.',
+        variant: 'destructive',
+      });
+    }
   };
 
   return (

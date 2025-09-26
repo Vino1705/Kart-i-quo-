@@ -1,4 +1,7 @@
+'use client';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -15,8 +18,75 @@ import {
   RadioGroupItem,
 } from '@/components/ui/radio-group';
 import { Logo } from '@/components/logo';
+import { useToast } from '@/hooks/use-toast';
+import { createUserWithEmailAndPassword, updateProfile, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
+import { auth, db } from '@/lib/firebase';
+import { doc, setDoc } from 'firebase/firestore';
+import { Loader2 } from 'lucide-react';
 
 export default function SignupPage() {
+  const [fullName, setFullName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [userType, setUserType] = useState('professional');
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
+  const { toast } = useToast();
+
+  const handleSignup = async () => {
+    setLoading(true);
+    try {
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+      await updateProfile(user, { displayName: fullName });
+      
+      // Create user document in Firestore
+      await setDoc(doc(db, 'users', user.uid), {
+        uid: user.uid,
+        displayName: fullName,
+        email: user.email,
+        userType: userType,
+      });
+
+      router.push('/onboarding');
+    } catch (error: any) {
+      toast({
+        title: 'Sign Up Failed',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleSignup = async () => {
+    setLoading(true);
+    const provider = new GoogleAuthProvider();
+    try {
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
+
+      // Create user document in Firestore
+      await setDoc(doc(db, 'users', user.uid), {
+        uid: user.uid,
+        displayName: user.displayName,
+        email: user.email,
+        userType: 'professional', // Default or ask later
+      }, { merge: true }); // Merge to avoid overwriting existing data if they login again
+
+      router.push('/onboarding');
+    } catch (error: any) {
+      toast({
+        title: 'Google Sign Up Failed',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <Card className="mx-auto max-w-sm">
       <CardHeader>
@@ -32,7 +102,14 @@ export default function SignupPage() {
         <div className="grid gap-4">
           <div className="grid gap-2">
             <Label htmlFor="full-name">Full name</Label>
-            <Input id="full-name" placeholder="John Doe" required />
+            <Input 
+              id="full-name" 
+              placeholder="John Doe" 
+              required 
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              disabled={loading}
+            />
           </div>
           <div className="grid gap-2">
             <Label htmlFor="email">Email</Label>
@@ -41,15 +118,24 @@ export default function SignupPage() {
               type="email"
               placeholder="m@example.com"
               required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              disabled={loading}
             />
           </div>
           <div className="grid gap-2">
             <Label htmlFor="password">Password</Label>
-            <Input id="password" type="password" />
+            <Input 
+              id="password" 
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              disabled={loading}
+            />
           </div>
           <div className="grid gap-2">
             <Label>I am a</Label>
-            <RadioGroup defaultValue="professional" className="grid grid-cols-3 gap-4">
+            <RadioGroup defaultValue="professional" onValueChange={setUserType} className="grid grid-cols-3 gap-4" disabled={loading}>
               <div>
                 <RadioGroupItem value="student" id="student" className="peer sr-only" />
                 <Label htmlFor="student" className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary">
@@ -70,10 +156,11 @@ export default function SignupPage() {
               </div>
             </RadioGroup>
           </div>
-          <Button type="submit" className="w-full" asChild>
-            <Link href="/onboarding">Create an account</Link>
+          <Button onClick={handleSignup} disabled={loading} className="w-full">
+             {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Create an account
           </Button>
-          <Button variant="outline" className="w-full">
+          <Button variant="outline" className="w-full" onClick={handleGoogleSignup} disabled={loading}>
             <svg className="mr-2 h-4 w-4" viewBox="0 0 48 48">
                 <path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039L38.388 8.922C34.411 5.373 29.5 3.5 24 3.5 13.75 3.5 5.5 11.75 5.5 22s8.25 18.5 18.5 18.5S42.5 32.25 42.5 22c0-1.25-.125-2.5-.389-3.917z"></path>
                 <path fill="#FF3D00" d="M6.306 14.691l6.571 4.819C14.655 15.108 18.961 13 24 13c3.059 0 5.842 1.154 7.961 3.039l5.427-5.104C34.411 5.373 29.5 3.5 24 3.5 16.318 3.5 9.656 8.337 6.306 14.691z"></path>

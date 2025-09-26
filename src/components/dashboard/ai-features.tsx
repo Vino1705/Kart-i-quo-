@@ -27,6 +27,9 @@ import {
 } from '@/ai/flows/safety-net-recommendations';
 import { Loader2 } from 'lucide-react';
 import type { Transaction } from '@/lib/types';
+import { useAuth } from '@/hooks/use-auth';
+import { db } from '@/lib/firebase';
+import { doc, getDoc } from 'firebase/firestore';
 
 type Financials = {
     totalIncome: number;
@@ -51,24 +54,34 @@ export function AiFeatures() {
   const [safetyExpenses, setSafetyExpenses] = useState('');
 
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const { user } = useAuth();
+
 
   useEffect(() => {
-    const storedFinancials = localStorage.getItem('financials');
-    const storedTransactions = localStorage.getItem('transactions');
-    
-    if (storedFinancials) {
-        const financials: Financials = JSON.parse(storedFinancials);
-        setScenarioIncome(financials.totalIncome);
-        setScenarioExpenses(financials.totalMandatoryExpenses);
-        setSafetyIncome(financials.totalIncome);
-        setSafetyExpenses(JSON.stringify(financials.mandatoryExpenses, null, 2));
-    }
-    
-    if (storedTransactions) {
-        const parsedTransactions: Transaction[] = JSON.parse(storedTransactions);
-        setTransactions(parsedTransactions);
-    }
-  }, []);
+    if (!user) return;
+
+    const fetchData = async () => {
+        const userDocRef = doc(db, 'users', user.uid);
+        const userDocSnap = await getDoc(userDocRef);
+
+        if (userDocSnap.exists() && userDocSnap.data().financials) {
+            const financials: Financials = userDocSnap.data().financials;
+            setScenarioIncome(financials.totalIncome);
+            setScenarioExpenses(financials.totalMandatoryExpenses);
+            setSafetyIncome(financials.totalIncome);
+            setSafetyExpenses(JSON.stringify(financials.mandatoryExpenses, null, 2));
+        }
+
+        const transactionsDocRef = doc(db, 'users', user.uid, 'transactions', 'data');
+        const transactionsSnap = await getDoc(transactionsDocRef);
+        if (transactionsSnap.exists()) {
+            const transactionData = transactionsSnap.data();
+            setTransactions(transactionData.items || []);
+        }
+    };
+
+    fetchData();
+  }, [user]);
 
   async function handleForecast(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
