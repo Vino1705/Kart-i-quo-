@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -19,11 +19,9 @@ import {
   updateProfile,
   sendPasswordResetEmail,
   deleteUser,
-  reauthenticateWithCredential,
-  EmailAuthProvider,
 } from 'firebase/auth';
-import { auth, db } from '@/lib/firebase';
-import { doc, deleteDoc, writeBatch } from 'firebase/firestore';
+import { auth } from '@/lib/firebase';
+import { doc, deleteDoc, writeBatch, collection } from 'firebase/firestore';
 import { Loader2 } from 'lucide-react';
 import {
   AlertDialog,
@@ -40,10 +38,17 @@ import { useRouter } from 'next/navigation';
 
 export default function SettingsPage() {
   const { user, loading: authLoading } = useAuth();
-  const [displayName, setDisplayName] = useState(user?.displayName || '');
+  const [displayName, setDisplayName] = useState('');
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const router = useRouter();
+
+  useEffect(() => {
+    if (user) {
+      setDisplayName(user.displayName || '');
+    }
+  }, [user]);
+
 
   const handleUpdateProfile = async () => {
     if (!user) return;
@@ -90,18 +95,18 @@ export default function SettingsPage() {
     setLoading(true);
 
     try {
+      // Lazily import firestore services only when needed
+      const { db } = await import('@/lib/firebase');
+      const { writeBatch, doc, collection } = await import('firebase/firestore');
+
       // Delete user data from Firestore
       const userDocRef = doc(db, 'users', user.uid);
-      // We can create a batch to delete subcollections if they exist, but for now we delete the main user doc.
-      // For a real app, you would need to recursively delete subcollections like goals and transactions.
-      const goalsCollectionRef = collection(db, 'users', user.uid, 'goals');
       const transactionsDocRef = doc(db, 'users', user.uid, 'transactions', 'data');
       
       const batch = writeBatch(db);
       batch.delete(userDocRef);
       batch.delete(transactionsDocRef);
-      // You'd need to query and delete goals individually, which is more complex.
-      // For this prototype, we'll just delete the user doc and transactions.
+      // In a real app, you would also need to query and delete all documents in subcollections like 'goals'.
       
       await batch.commit();
 
@@ -130,6 +135,8 @@ export default function SettingsPage() {
   }
   
   if (!user) {
+    // Redirect to login if not authenticated, which should be handled by useAuth hook but as a fallback
+    router.push('/login');
     return <p>Please log in to view your settings.</p>
   }
 
