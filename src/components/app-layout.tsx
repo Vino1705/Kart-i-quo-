@@ -10,6 +10,7 @@ import {
   LayoutGrid,
   ClipboardCheck,
   Landmark,
+  ChartNoAxesColumnIncreasing,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -21,14 +22,13 @@ import { UserNav } from '@/components/user-nav';
 import { Logo } from '@/components/logo';
 import Chatbot from '@/components/chatbot';
 import { ThemeToggle } from '@/components/theme-toggle';
-import { BarChart } from 'lucide-react';
 
 const navItems = [
   { href: '/dashboard', icon: LayoutGrid, label: 'Dashboard' },
   { href: '/daily-check-in', icon: ClipboardCheck, label: 'Daily Check-in' },
   { href: '/expenses', icon: Landmark, label: 'Expenses' },
   { href: '/goals', icon: Target, label: 'Goals' },
-  { href: '/reports', icon: BarChart, label: 'Reports' },
+  { href: '/reports', icon: ChartNoAxesColumnIncreasing, label: 'Reports' },
   { href: '/settings', icon: Settings, label: 'Settings' },
 ];
 
@@ -109,4 +109,3 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     </div>
   );
 }
-
