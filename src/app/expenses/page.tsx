@@ -1,3 +1,6 @@
+'use client';
+
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -9,9 +12,86 @@ import {
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { PlusCircle, Trash2 } from 'lucide-react';
+import { PlusCircle, Trash2, Loader2 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { calculateDisposableIncome } from '@/ai/flows/calculate-disposable-income';
+
+type Expense = {
+  id: number;
+  name: string;
+  amount: number;
+};
 
 export default function ExpensesPage() {
+  const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [newExpenseName, setNewExpenseName] = useState('');
+  const [newExpenseAmount, setNewExpenseAmount] = useState<number>(0);
+  const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    const storedFinancials = localStorage.getItem('financials');
+    if (storedFinancials) {
+      const financials = JSON.parse(storedFinancials);
+      setExpenses(financials.mandatoryExpenses || []);
+    }
+  }, []);
+
+  const updateFinancials = async (updatedExpenses: Expense[]) => {
+    setLoading(true);
+    const storedFinancials = localStorage.getItem('financials');
+    if (!storedFinancials) {
+      toast({ title: "Error", description: "Could not find financial data.", variant: "destructive" });
+      setLoading(false);
+      return;
+    }
+
+    const financials = JSON.parse(storedFinancials);
+    const totalIncome = financials.totalIncome;
+
+    try {
+      const result = await calculateDisposableIncome({
+        totalIncome: totalIncome,
+        mandatoryExpenses: updatedExpenses,
+      });
+
+      const totalMandatoryExpenses = updatedExpenses.reduce((acc, exp) => acc + exp.amount, 0);
+
+      const newFinancials = {
+        ...financials,
+        mandatoryExpenses: updatedExpenses,
+        totalMandatoryExpenses,
+        ...result,
+      };
+
+      localStorage.setItem('financials', JSON.stringify(newFinancials));
+      setExpenses(updatedExpenses);
+      toast({ title: "Success", description: "Your expenses and financial summary have been updated." });
+
+    } catch (error) {
+      toast({ title: "AI Error", description: "Failed to recalculate financial summary.", variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAddExpense = () => {
+    if (!newExpenseName || newExpenseAmount <= 0) {
+      toast({ title: "Invalid Input", description: "Please provide a valid name and amount.", variant: "destructive" });
+      return;
+    }
+    const newExpense = { id: Date.now(), name: newExpenseName, amount: newExpenseAmount };
+    const updatedExpenses = [...expenses, newExpense];
+    updateFinancials(updatedExpenses);
+    setNewExpenseName('');
+    setNewExpenseAmount(0);
+  };
+
+  const handleRemoveExpense = (id: number) => {
+    const updatedExpenses = expenses.filter(exp => exp.id !== id);
+    updateFinancials(updatedExpenses);
+  };
+
   return (
     <div className="w-full max-w-4xl mx-auto">
       <Card>
@@ -24,51 +104,48 @@ export default function ExpensesPage() {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            <div className="grid gap-4">
-              <div className="flex items-center gap-2">
-                <Input placeholder="Expense Name (e.g., Rent)" value="Rent" readOnly />
-                <Input type="number" placeholder="Amount (₹)" value="15000" readOnly />
-                <Button variant="ghost" size="icon">
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+            {expenses.length > 0 ? (
+              <div className="grid gap-4">
+                {expenses.map((expense) => (
+                  <div key={expense.id} className="flex items-center gap-2">
+                    <Input value={expense.name} readOnly />
+                    <Input type="number" value={expense.amount} readOnly />
+                    <Button variant="ghost" size="icon" onClick={() => handleRemoveExpense(expense.id)} disabled={loading}>
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
               </div>
-              <div className="flex items-center gap-2">
-                <Input
-                  placeholder="Expense Name (e.g., Loan EMI)"
-                  value="Car Loan EMI"
-                  readOnly
-                />
-                <Input type="number" placeholder="Amount (₹)" value="8000" readOnly />
-                <Button variant="ghost" size="icon">
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+            ) : (
+               <div className="text-center text-muted-foreground py-8 border rounded-md">
+                You haven't added any mandatory expenses yet.
               </div>
-               <div className="flex items-center gap-2">
-                <Input
-                  placeholder="Expense Name (e.g., Electricity Bill)"
-                  value="Electricity Bill"
-                  readOnly
-                />
-                <Input type="number" placeholder="Amount (₹)" value="1200" readOnly/>
-                <Button variant="ghost" size="icon">
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
+            )}
           </div>
         </CardContent>
         <CardFooter className="border-t pt-6">
             <div className="flex items-end gap-2 w-full">
                 <div className="grid gap-2 flex-1">
                     <Label htmlFor="new-expense-name">New Expense Name</Label>
-                    <Input id="new-expense-name" placeholder="e.g., Internet Bill"/>
+                    <Input 
+                      id="new-expense-name" 
+                      placeholder="e.g., Internet Bill"
+                      value={newExpenseName}
+                      onChange={(e) => setNewExpenseName(e.target.value)}
+                    />
                 </div>
                  <div className="grid gap-2">
                     <Label htmlFor="new-expense-amount">Amount (₹)</Label>
-                    <Input id="new-expense-amount" type="number" placeholder="600"/>
+                    <Input 
+                      id="new-expense-amount" 
+                      type="number" 
+                      placeholder="600"
+                      value={newExpenseAmount || ''}
+                      onChange={(e) => setNewExpenseAmount(parseFloat(e.target.value))}
+                    />
                 </div>
-                 <Button>
-                    <PlusCircle className="mr-2 h-4 w-4" />
+                 <Button onClick={handleAddExpense} disabled={loading}>
+                    {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <PlusCircle className="mr-2 h-4 w-4" />}
                     Add Expense
                 </Button>
             </div>

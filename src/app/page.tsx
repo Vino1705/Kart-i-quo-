@@ -1,3 +1,6 @@
+'use client';
+
+import { useState, useEffect } from 'react';
 import { GoalsSummary } from '@/components/dashboard/goals-summary';
 import { RecentTransactions } from '@/components/dashboard/recent-transactions';
 import { AiFeatures } from '@/components/dashboard/ai-features';
@@ -9,8 +12,39 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { OverviewChart } from '@/components/dashboard/overview-chart';
+import { useRouter } from 'next/navigation';
+
+type Financials = {
+  totalIncome: number;
+  totalMandatoryExpenses: number;
+  dailySpendingLimit: number;
+  goalSavingsSuggestion: number;
+};
 
 export default function Home() {
+  const [financials, setFinancials] = useState<Financials | null>(null);
+  const router = useRouter();
+
+  useEffect(() => {
+    const storedFinancials = localStorage.getItem('financials');
+    if (storedFinancials) {
+      setFinancials(JSON.parse(storedFinancials));
+    } else {
+      // If no financials, redirect to onboarding
+      router.push('/onboarding');
+    }
+  }, [router]);
+
+  if (!financials) {
+    return (
+      <div className="flex justify-center items-center h-full">
+        <p>Loading your financial dashboard...</p>
+      </div>
+    );
+  }
+
+  const savings = financials.totalIncome - financials.totalMandatoryExpenses;
+
   return (
     <>
       <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
@@ -20,33 +54,33 @@ export default function Home() {
             <span className="text-2xl">💰</span>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold font-headline">₹0.00</div>
+            <div className="text-2xl font-bold font-headline">₹{financials.totalIncome.toLocaleString('en-IN')}</div>
             <p className="text-xs text-muted-foreground">
-              Based on your entries
+              Your monthly income
             </p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Savings</CardTitle>
+            <CardTitle className="text-sm font-medium">Potential Savings</CardTitle>
             <span className="text-2xl">🏦</span>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold font-headline">₹0.00</div>
+            <div className="text-2xl font-bold font-headline">₹{savings.toLocaleString('en-IN')}</div>
             <p className="text-xs text-muted-foreground">
-              Based on your entries
+              After mandatory expenses
             </p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Expenses</CardTitle>
+            <CardTitle className="text-sm font-medium">Mandatory Expenses</CardTitle>
             <span className="text-2xl">💸</span>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold font-headline">₹0.00</div>
+            <div className="text-2xl font-bold font-headline">₹{financials.totalMandatoryExpenses.toLocaleString('en-IN')}</div>
             <p className="text-xs text-muted-foreground">
-              Based on your entries
+              Your fixed monthly costs
             </p>
           </CardContent>
         </Card>
@@ -56,9 +90,9 @@ export default function Home() {
             <span className="text-2xl">⚖️</span>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold font-headline">₹300.00</div>
+            <div className="text-2xl font-bold font-headline">₹{financials.dailySpendingLimit.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</div>
             <p className="text-xs text-muted-foreground">
-              Your suggested daily spend
+              Suggested discretionary spend
             </p>
           </CardContent>
         </Card>

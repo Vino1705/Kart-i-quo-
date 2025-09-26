@@ -1,3 +1,6 @@
+'use client';
+
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -16,23 +19,96 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { PlusCircle, Trash2 } from 'lucide-react';
+import { PlusCircle, Trash2, Loader2 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import type { Transaction } from '@/lib/types';
 
 export default function DailyCheckinPage() {
+  const [dailyLimit, setDailyLimit] = useState(300);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  
+  const [description, setDescription] = useState('');
+  const [category, setCategory] = useState('');
+  const [amount, setAmount] = useState<number>(0);
+
+  const { toast } = useToast();
+
+  useEffect(() => {
+    const storedFinancials = localStorage.getItem('financials');
+    if (storedFinancials) {
+      const financials = JSON.parse(storedFinancials);
+      setDailyLimit(financials.dailySpendingLimit || 300);
+    }
+    
+    const storedTransactions = localStorage.getItem('transactions');
+    if (storedTransactions) {
+      setTransactions(JSON.parse(storedTransactions));
+    }
+  }, []);
+  
+  const handleUpdateLimit = () => {
+    const storedFinancials = localStorage.getItem('financials');
+    if (storedFinancials) {
+        const financials = JSON.parse(storedFinancials);
+        financials.dailySpendingLimit = dailyLimit;
+        localStorage.setItem('financials', JSON.stringify(financials));
+        toast({ title: 'Success', description: 'Daily limit updated!' });
+    }
+  }
+
+  const handleAddExpense = () => {
+    if (!description || !category || !amount || amount <= 0) {
+      toast({
+        title: 'Invalid Expense',
+        description: 'Please fill out all fields with valid values.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    const newTransaction: Transaction = {
+      id: Date.now().toString(),
+      date: new Date().toISOString(),
+      description,
+      category: category as Transaction['category'],
+      amount,
+      type: 'expense'
+    };
+
+    const updatedTransactions = [...transactions, newTransaction];
+    setTransactions(updatedTransactions);
+    localStorage.setItem('transactions', JSON.stringify(updatedTransactions));
+
+    // Reset form
+    setDescription('');
+    setCategory('');
+    setAmount(0);
+
+    toast({ title: 'Expense Added', description: `Logged ${description} for ₹${amount}` });
+  };
+  
+  const todaysExpenses = transactions.filter(t => new Date(t.date).toDateString() === new Date().toDateString());
+
   return (
     <div className="w-full max-w-4xl mx-auto space-y-8">
       <Card>
         <CardHeader>
           <CardTitle className="font-headline">Daily Spending Limit</CardTitle>
           <CardDescription>
-            Your suggested daily spending limit is ₹300. You can adjust it
-            below.
+            Your suggested daily spending limit is shown below. You can adjust it if needed.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid gap-2 max-w-sm">
             <Label htmlFor="daily-limit">Daily Limit (₹)</Label>
-            <Input id="daily-limit" type="number" defaultValue="300" />
+            <div className="flex items-center gap-2">
+              <Input 
+                id="daily-limit" 
+                type="number" 
+                value={dailyLimit} 
+                onChange={(e) => setDailyLimit(parseFloat(e.target.value) || 0)}
+              />
+              <Button onClick={handleUpdateLimit}>Update</Button>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -48,36 +124,59 @@ export default function DailyCheckinPage() {
             <div className="flex items-end gap-2">
                 <div className="grid gap-2 flex-1">
                     <Label>Description</Label>
-                    <Input placeholder="e.g., Coffee" />
+                    <Input 
+                      placeholder="e.g., Coffee" 
+                      value={description} 
+                      onChange={(e) => setDescription(e.target.value)}
+                    />
                 </div>
                  <div className="grid gap-2">
                     <Label>Category</Label>
-                    <Select>
+                    <Select value={category} onValueChange={setCategory}>
                         <SelectTrigger className="w-[180px]">
                             <SelectValue placeholder="Select category" />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="food">Food</SelectItem>
-                            <SelectItem value="transport">Transport</SelectItem>
-                            <SelectItem value="entertainment">Entertainment</SelectItem>
-                            <SelectItem value="housing">Housing</SelectItem>
-                             <SelectItem value="other">Other</SelectItem>
+                            <SelectItem value="Food">Food</SelectItem>
+                            <SelectItem value="Transport">Transport</SelectItem>
+                            <SelectItem value="Entertainment">Entertainment</SelectItem>
+                            <SelectItem value="Housing">Housing</SelectItem>
+                             <SelectItem value="Other">Other</SelectItem>
                         </SelectContent>
                     </Select>
                 </div>
                 <div className="grid gap-2">
                     <Label>Amount (₹)</Label>
-                    <Input type="number" placeholder="150" />
+                    <Input 
+                      type="number" 
+                      placeholder="150" 
+                      value={amount || ''}
+                      onChange={(e) => setAmount(parseFloat(e.target.value) || 0)}
+                    />
                 </div>
-                 <Button>
+                 <Button onClick={handleAddExpense}>
                     <PlusCircle className="mr-2 h-4 w-4" />
                     Add
                 </Button>
             </div>
 
+            {todaysExpenses.length > 0 ? (
+                <ul className="border-t mt-4 pt-4 space-y-2">
+                    {todaysExpenses.map(exp => (
+                        <li key={exp.id} className="flex justify-between items-center bg-muted/50 p-2 rounded-md">
+                            <div>
+                                <p className="font-medium">{exp.description}</p>
+                                <p className="text-sm text-muted-foreground">{exp.category}</p>
+                            </div>
+                            <p className="font-medium text-red-500">-₹{exp.amount.toFixed(2)}</p>
+                        </li>
+                    ))}
+                </ul>
+            ) : (
              <div className="text-center text-muted-foreground py-8 border-t mt-4 pt-4">
               You haven't added any expenses for today yet.
             </div>
+            )}
         </CardContent>
       </Card>
     </div>

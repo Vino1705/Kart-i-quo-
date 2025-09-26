@@ -1,3 +1,6 @@
+'use client';
+
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -9,29 +12,148 @@ import {
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { PlusCircle } from 'lucide-react';
+import { PlusCircle, Trash2 } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
+import { useToast } from '@/hooks/use-toast';
+import type { Goal } from '@/lib/types';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 
 export default function GoalsPage() {
+  const [goals, setGoals] = useState<Goal[]>([]);
+  const [goalName, setGoalName] = useState('');
+  const [targetAmount, setTargetAmount] = useState<number>(0);
+  const [deadline, setDeadline] = useState('');
+  const { toast } = useToast();
+
+  useEffect(() => {
+    const storedGoals = localStorage.getItem('goals');
+    if (storedGoals) {
+      setGoals(JSON.parse(storedGoals));
+    }
+  }, []);
+
+  const handleAddGoal = () => {
+    if (!goalName || !targetAmount || !deadline) {
+      toast({
+        title: 'Missing Information',
+        description: 'Please fill out all fields to add a new goal.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const newGoal: Goal = {
+      id: Date.now().toString(),
+      name: goalName,
+      targetAmount,
+      currentAmount: 0, // Goals start with 0 saved
+      deadline,
+    };
+
+    const updatedGoals = [...goals, newGoal];
+    setGoals(updatedGoals);
+    localStorage.setItem('goals', JSON.stringify(updatedGoals));
+
+    // Reset form
+    setGoalName('');
+    setTargetAmount(0);
+    setDeadline('');
+
+    toast({
+      title: 'Goal Added!',
+      description: `You're now tracking your goal: ${goalName}.`,
+    });
+  };
+  
+  const handleRemoveGoal = (id: string) => {
+    const updatedGoals = goals.filter(goal => goal.id !== id);
+    setGoals(updatedGoals);
+    localStorage.setItem('goals', JSON.stringify(updatedGoals));
+    toast({
+      title: 'Goal Removed',
+      description: 'Your goal has been successfully removed.',
+    });
+  };
+
   return (
-    <div className="w-full max-w-4xl mx-auto">
+    <div className="w-full max-w-4xl mx-auto space-y-8">
       <Card>
         <CardHeader>
-          <CardTitle className="font-headline">Manage Your Goals</CardTitle>
+          <CardTitle className="font-headline">Your Financial Goals</CardTitle>
           <CardDescription>
-            Add, edit, or remove your financial goals.
+            Here's a list of your current goals. Stay focused!
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            {/* This will be populated with user's goals */}
-            <div className="text-center text-muted-foreground py-8">
-              You haven't added any goals yet.
-            </div>
+          <div className="space-y-6">
+            {goals.length > 0 ? (
+              goals.map((goal) => {
+                const progress = (goal.currentAmount / goal.targetAmount) * 100;
+                return (
+                  <div key={goal.id} className="p-4 border rounded-lg">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <p className="font-bold text-lg font-headline">{goal.name}</p>
+                        <p className="text-sm text-muted-foreground">
+                          Target: ₹{goal.targetAmount.toLocaleString('en-IN')} | Deadline: {new Date(goal.deadline).toLocaleDateString()}
+                        </p>
+                      </div>
+                       <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="ghost" size="icon"><Trash2 className="h-4 w-4"/></Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                This action cannot be undone. This will permanently delete your goal
+                                "{goal.name}".
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => handleRemoveGoal(goal.id)}>
+                                Delete
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+
+                    </div>
+                    <div className="mt-2">
+                       <div className="flex justify-between items-center mb-1">
+                          <p className="text-sm">
+                            Saved: <span className="font-medium">₹{goal.currentAmount.toLocaleString('en-IN')}</span>
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            {Math.round(progress)}%
+                          </p>
+                        </div>
+                      <Progress value={progress} aria-label={`${goal.name} progress`} />
+                    </div>
+                  </div>
+                );
+              })
+            ) : (
+              <div className="text-center text-muted-foreground py-8">
+                You haven't added any goals yet. Add one below to get started.
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
 
-      <Card className="mt-8">
+      <Card>
         <CardHeader>
           <CardTitle className="font-headline">Add a New Goal</CardTitle>
           <CardDescription>
@@ -41,21 +163,37 @@ export default function GoalsPage() {
         <CardContent className="grid gap-4">
           <div className="grid gap-2">
             <Label htmlFor="goal-name">Goal Name</Label>
-            <Input id="goal-name" placeholder="e.g., New Car" />
+            <Input 
+              id="goal-name" 
+              placeholder="e.g., New Car" 
+              value={goalName}
+              onChange={(e) => setGoalName(e.target.value)}
+            />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="grid gap-2">
               <Label htmlFor="target-amount">Target Amount (₹)</Label>
-              <Input id="target-amount" type="number" placeholder="500000" />
+              <Input 
+                id="target-amount" 
+                type="number" 
+                placeholder="500000" 
+                value={targetAmount || ''}
+                onChange={(e) => setTargetAmount(parseFloat(e.target.value))}
+              />
             </div>
             <div className="grid gap-2">
               <Label htmlFor="deadline">Deadline</Label>
-              <Input id="deadline" type="date" />
+              <Input 
+                id="deadline" 
+                type="date" 
+                value={deadline}
+                onChange={(e) => setDeadline(e.target.value)}
+              />
             </div>
           </div>
         </CardContent>
         <CardFooter>
-          <Button>
+          <Button onClick={handleAddGoal}>
             <PlusCircle className="mr-2 h-4 w-4" />
             Add Goal
           </Button>

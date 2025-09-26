@@ -1,3 +1,5 @@
+'use client';
+import { useState, useEffect } from 'react';
 import type { Transaction } from '@/lib/types';
 import {
   Card,
@@ -17,9 +19,36 @@ import {
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 
-const transactions: Transaction[] = [];
-
 export function RecentTransactions() {
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+
+  useEffect(() => {
+    const storedTransactions = localStorage.getItem('transactions');
+    if (storedTransactions) {
+      const parsedTransactions: Transaction[] = JSON.parse(storedTransactions);
+      // Sort by date descending and take the last 5
+      const recentTransactions = parsedTransactions
+        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+        .slice(0, 5);
+      setTransactions(recentTransactions);
+    }
+
+    // Optional: Listen for storage changes to update in real-time across tabs
+    const handleStorageChange = () => {
+       const stored = localStorage.getItem('transactions');
+       if(stored) {
+         const parsed: Transaction[] = JSON.parse(stored);
+         const recent = parsed
+          .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+          .slice(0, 5);
+         setTransactions(recent);
+       }
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+
+  }, []);
+
   return (
     <Card className="xl:col-span-3">
       <CardHeader>
